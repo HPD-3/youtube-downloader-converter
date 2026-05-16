@@ -1,4 +1,7 @@
-from moviepy.editor import VideoFileClip
+try:
+    from moviepy import VideoFileClip
+except ImportError:
+    from moviepy.editor import VideoFileClip
 
 def convert_to_mp3(filename):
     clip = VideoFileClip(filename)
