@@ -9,6 +9,14 @@ Install the runtime dependencies before launching the app:
 pip install yt-dlp moviepy
 ```
 
+If you are running the FastAPI app directly, also install the API dependencies from `requirements.txt`.
+
+The backend now reads allowed browser origins from `CORS_ORIGINS`. For deployment, set it to a comma-separated list such as:
+
+```bash
+CORS_ORIGINS=https://webconverter-c3376.web.app,http://localhost:3000
+```
+
 MoviePy also needs FFmpeg available on your system path for MP3 conversion.
 
 Copyright (c) HPD-3 2026 - 
