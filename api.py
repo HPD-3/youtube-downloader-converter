@@ -44,6 +44,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "X-Download-Filename"],
 )
 
 
@@ -110,7 +111,13 @@ def download_video_file(req: DownloadRequest):
         fname = youtube_downloader.download_video(req.url, req.resolution)
         if not os.path.exists(fname):
             raise HTTPException(status_code=500, detail="Downloaded file not found")
-        return FileResponse(path=fname, media_type="video/mp4", filename=os.path.basename(fname))
+        download_name = os.path.basename(fname)
+        return FileResponse(
+            path=fname,
+            media_type="video/mp4",
+            filename=download_name,
+            headers={"X-Download-Filename": download_name},
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -124,7 +131,13 @@ def download_and_convert_file(req: DownloadRequest):
         mp3 = file_converter.convert_to_mp3(fname)
         if not exists(mp3):
             raise HTTPException(status_code=500, detail="Converted file not found")
-        return FileResponse(path=mp3, media_type="audio/mpeg", filename=basename(mp3))
+        download_name = basename(mp3)
+        return FileResponse(
+            path=mp3,
+            media_type="audio/mpeg",
+            filename=download_name,
+            headers={"X-Download-Filename": download_name},
+        )
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
@@ -141,7 +154,13 @@ def convert_and_return_file(req: ConvertRequest):
         mp3 = file_converter.convert_to_mp3(req.filename)
         if not os.path.exists(mp3):
             raise HTTPException(status_code=500, detail="Converted file not found")
-        return FileResponse(path=mp3, media_type="audio/mpeg", filename=os.path.basename(mp3))
+        download_name = os.path.basename(mp3)
+        return FileResponse(
+            path=mp3,
+            media_type="audio/mpeg",
+            filename=download_name,
+            headers={"X-Download-Filename": download_name},
+        )
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
