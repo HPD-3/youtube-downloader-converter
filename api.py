@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import os
+from os.path import basename, exists
 from pydantic import BaseModel
 from typing import List, Optional
 import youtube_downloader
@@ -83,8 +84,10 @@ def download_playlist(req: PlaylistRequest):
 @app.post("/convert/mp3")
 def convert_to_mp3(req: ConvertRequest):
     try:
-        file_converter.convert_to_mp3(req.filename)
-        return {"mp3_filename": req.filename[:-4] + ".mp3"}
+        mp3_filename = file_converter.convert_to_mp3(req.filename)
+        return {"mp3_filename": basename(mp3_filename)}
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -93,8 +96,10 @@ def convert_to_mp3(req: ConvertRequest):
 def download_and_convert(req: DownloadRequest):
     try:
         fname = youtube_downloader.download_video(req.url, req.resolution)
-        file_converter.convert_to_mp3(fname)
-        return {"filename": fname, "mp3": fname[:-4] + ".mp3"}
+        mp3_filename = file_converter.convert_to_mp3(fname)
+        return {"filename": fname, "mp3": mp3_filename}
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -116,11 +121,12 @@ def download_video_file(req: DownloadRequest):
 def download_and_convert_file(req: DownloadRequest):
     try:
         fname = youtube_downloader.download_video(req.url, req.resolution)
-        mp3 = fname[:-4] + ".mp3"
-        file_converter.convert_to_mp3(fname)
-        if not os.path.exists(mp3):
+        mp3 = file_converter.convert_to_mp3(fname)
+        if not exists(mp3):
             raise HTTPException(status_code=500, detail="Converted file not found")
-        return FileResponse(path=mp3, media_type="audio/mpeg", filename=os.path.basename(mp3))
+        return FileResponse(path=mp3, media_type="audio/mpeg", filename=basename(mp3))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
@@ -132,11 +138,12 @@ def convert_and_return_file(req: ConvertRequest):
     try:
         if not os.path.exists(req.filename):
             raise HTTPException(status_code=400, detail="Source file not found")
-        mp3 = req.filename[:-4] + ".mp3"
-        file_converter.convert_to_mp3(req.filename)
+        mp3 = file_converter.convert_to_mp3(req.filename)
         if not os.path.exists(mp3):
             raise HTTPException(status_code=500, detail="Converted file not found")
         return FileResponse(path=mp3, media_type="audio/mpeg", filename=os.path.basename(mp3))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
