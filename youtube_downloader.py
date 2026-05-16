@@ -6,6 +6,10 @@ except ImportError as exc:
     ) from exc
 
 
+def _title_template():
+    return "%(title).200s.%(ext)s"
+
+
 def _resolution_height(resolution):
     if resolution in ["low", "360", "360p"]:
         return 360
@@ -20,27 +24,40 @@ def _resolution_height(resolution):
 
 def _download(url, resolution, playlist=False):
     downloaded_filename = None
+    downloaded_title = None
 
     def capture_downloaded_filename(data):
-        nonlocal downloaded_filename
+        nonlocal downloaded_filename, downloaded_title
         if data.get("status") == "finished":
             downloaded_filename = data.get("filepath") or data.get("filename")
+            downloaded_title = data.get("info_dict", {}).get("title")
+
+    def build_filename_from_title(info_dict):
+        title = info_dict.get("title") or "downloaded_video"
+        ext = info_dict.get("ext") or "mp4"
+        return f"{title[:200]}.{ext}"
 
     options = {
         "format": f"best[height<={_resolution_height(resolution)}][ext=mp4]/best[ext=mp4]/best",
         "noplaylist": not playlist,
-        "outtmpl": "%(title)s.%(ext)s",
+        "outtmpl": _title_template(),
         "quiet": True,
         "progress_hooks": [capture_downloaded_filename],
     }
 
     with YoutubeDL(options) as downloader:
-        downloader.download([url])
+        info = downloader.extract_info(url, download=True)
 
-    if not downloaded_filename:
-        raise RuntimeError("Could not determine the downloaded file name.")
+    if downloaded_title and downloaded_filename:
+        return build_filename_from_title({"title": downloaded_title, "ext": downloaded_filename.rsplit(".", 1)[-1]})
 
-    return downloaded_filename
+    if info:
+        return build_filename_from_title(info)
+
+    if downloaded_filename:
+        return downloaded_filename
+
+    raise RuntimeError("Could not determine the downloaded file name.")
 
 
 def download_video(url, resolution):
