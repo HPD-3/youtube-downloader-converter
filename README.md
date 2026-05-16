@@ -6,7 +6,7 @@ A simple Python script that is able to download YouTube videos or playlists and 
 Install the runtime dependencies before launching the app:
 
 ```bash
-pip install yt-dlp moviepy
+pip install yt-dlp
 ```
 
 If you are running the FastAPI app directly, also install the API dependencies from `requirements.txt`.
@@ -17,7 +17,7 @@ The backend now reads allowed browser origins from `CORS_ORIGINS`. For deploymen
 CORS_ORIGINS=https://webconverter-c3376.web.app,http://localhost:3000
 ```
 
-MoviePy also needs FFmpeg available on your system path for MP3 conversion.
+MP3 conversion uses FFmpeg, which must be available on your system path.
 
 Copyright (c) HPD-3 2026 - 
 
