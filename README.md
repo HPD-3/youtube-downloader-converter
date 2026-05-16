@@ -11,7 +11,7 @@ pip install yt-dlp moviepy
 
 MoviePy also needs FFmpeg available on your system path for MP3 conversion.
 
-Copyright (c) NeuralNine 2020 - YouTube Downloader v0.2 Alpha
+Copyright (c) HPD-3 2026 - 
 
 WARNING: DOWNLOADING COPYRIGHTED MATERIAL IS HIGHLY ILLEGAL!
 I DO NOT TAKE ANY RESPONSIBILITY FOR YOUR USAGE OF THIS TOOL!
