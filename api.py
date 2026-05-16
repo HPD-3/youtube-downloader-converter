@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+import os
 from pydantic import BaseModel
 from typing import List, Optional
 import youtube_downloader
@@ -75,6 +77,50 @@ def download_and_convert(req: DownloadRequest):
         fname = youtube_downloader.download_video(req.url, req.resolution)
         file_converter.convert_to_mp3(fname)
         return {"filename": fname, "mp3": fname[:-4] + ".mp3"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/download/video/file")
+def download_video_file(req: DownloadRequest):
+    try:
+        fname = youtube_downloader.download_video(req.url, req.resolution)
+        if not os.path.exists(fname):
+            raise HTTPException(status_code=500, detail="Downloaded file not found")
+        return FileResponse(path=fname, media_type="video/mp4", filename=os.path.basename(fname))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/download/convert/file")
+def download_and_convert_file(req: DownloadRequest):
+    try:
+        fname = youtube_downloader.download_video(req.url, req.resolution)
+        mp3 = fname[:-4] + ".mp3"
+        file_converter.convert_to_mp3(fname)
+        if not os.path.exists(mp3):
+            raise HTTPException(status_code=500, detail="Converted file not found")
+        return FileResponse(path=mp3, media_type="audio/mpeg", filename=os.path.basename(mp3))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/convert/file")
+def convert_and_return_file(req: ConvertRequest):
+    try:
+        if not os.path.exists(req.filename):
+            raise HTTPException(status_code=400, detail="Source file not found")
+        mp3 = req.filename[:-4] + ".mp3"
+        file_converter.convert_to_mp3(req.filename)
+        if not os.path.exists(mp3):
+            raise HTTPException(status_code=500, detail="Converted file not found")
+        return FileResponse(path=mp3, media_type="audio/mpeg", filename=os.path.basename(mp3))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
